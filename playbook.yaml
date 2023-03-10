@@ -1,0 +1,163 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+  - variables
+  tasks:
+  - name: Install the dependencies
+    ansible.builtin.yum:
+      name: "{{ item }}"
+      state: present
+    loop:
+      "{{ dependencies }}"
+
+  - name: Turn off swap
+    ansible.builtin.command: swapoff -a
+
+  - name: Build hosts file
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: '{{ hostvars[item].ansible_host }} {{item}}'
+      state: present
+    with_items: '{{ groups["all"] }}'
+
+  - name: Load two required modules
+    ansible.builtin.shell: |
+      modprobe overlay
+      modprobe br_netfilter
+
+  - name: Add configuration to make them loadable at boot time
+    blockinfile:
+      path: /etc/modules-load.d/containerd.conf
+      create: true
+      block: |
+        overlay
+        br_netfilter
+
+  - name: Setup required sysctl params, these persist across reboots.
+    sysctl:
+      name: "{{ item }}"
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes
+      sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+    loop:
+      "{{ sysctl_set }}"
+
+  - name: Add official Docker Repository to CentOS 7
+    get_url:
+      url: https://download.docker.com/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/docker-ce.repo
+      mode: 0644
+
+  - name: Install the containerd package
+    ansible.builtin.yum:
+      name: containerd
+      state: present
+
+  - name: Create a configuration file for containerd and set it to default
+    ansible.builtin.shell: |
+      mkdir -p /etc/containerd
+      containerd config default | tee /etc/containerd/config.toml
+
+  - name: Set cgroupdriver to systemd
+    lineinfile:
+      path: /etc/containerd/config.toml
+      regexp: 'SystemdCgroup = false'
+      line: SystemdCgroup = true
+
+  - name: Restart containerd package
+    ansible.builtin.service:
+      name: containerd
+      state: restarted
+      enabled: true
+
+  - name: Add the Kubernetes repository
+    blockinfile:
+      path: /etc/yum.repos.d/kubernetes.repo
+      create: true
+      block: |
+        [kubernetes]
+        name=Kubernetes
+        baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        enabled=1
+        gpgcheck=1
+        repo_gpgcheck=1
+        gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+  - name: Install all Kubernetes modules (kubelet, kubeadm, kubectl)
+    ansible.builtin.yum:
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+  - name: Enable kubelet
+    ansible.builtin.service:
+      name: kubelet
+      enabled: true
+
+  - name: Initializing Kubernetes cluster
+    ansible.builtin.command: |
+      kubeadm init
+      --apiserver-advertise-address=192.168.56.11
+      --control-plane-endpoint=192.168.56.11
+      --pod-network-cidr=10.244.0.0/16
+    when: inventory_hostname in groups['master']
+
+  - name: Set up Kubernetes for not root user
+    become: false
+    ansible.builtin.shell: |
+      mkdir -p $HOME/.kube
+      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    when: inventory_hostname in groups['master']
+
+  - name: Install Calico Add-on
+    become: false
+    ansible.builtin.command: >
+      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
+    when: inventory_hostname in groups['master']
+
+  - name: Retrieve Kubernetes join command that is used to join worker node(s)
+    become: false
+    ansible.builtin.command: kubeadm token create --print-join-command
+    register: join_command_raw
+    when: inventory_hostname in groups['master']
+
+  - name: Set join command
+    ansible.builtin.set_fact:
+      join_command: "{{ join_command_raw.stdout_lines[0] }}"
+    when: inventory_hostname in groups['master']
+
+  - name: Print the join_command
+    debug:
+      msg: "{{ join_command }}"
+    when: inventory_hostname in groups['master']
+
+  - name: Join node to the cluster
+    ansible.builtin.command: "{{ hostvars['master-node'].join_command }}"
+    when: inventory_hostname in groups['workers']
+
+  - name: Add k alias on Master Node
+    become: false
+    ansible.builtin.lineinfile:
+      path: ~/.bashrc
+      line: alias k=kubectl
+      regexp: '^alias k=kubectl&'
+      state: present
+      insertafter: EOF
+      create: true
+      mode: '0644'
+    when: inventory_hostname in groups['master']
+
+  - name: Install helm
+    ansible.builtin.shell: |
+      set -o pipefail
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    when: inventory_hostname in groups['master']

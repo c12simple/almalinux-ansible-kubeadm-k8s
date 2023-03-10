@@ -1,0 +1,24 @@
+master_port_list:
+  - { port: 6443/tcp }
+  - { port: 2379-2380/tcp }
+  - { port: 10250/tcp }
+  - { port: 10257/tcp }
+  - { port: 10259/tcp }
+  - { port: 6783/tcp}
+  - { port: 6783-6784/udp }
+
+worker_port_list:
+  - { port: 10250/tcp }
+  - { port: 30000-32767/tcp }
+  - { port: 6783/tcp }
+  - { port: 6783-6784/udp }
+
+sysctl_set:
+  - net.bridge.bridge-nf-call-iptables
+  - net.ipv4.ip_forward
+  - net.bridge.bridge-nf-call-ip6tables
+
+dependencies:
+  - yum-utils
+  - device-mapper-persistent-data 
+  - lvm2

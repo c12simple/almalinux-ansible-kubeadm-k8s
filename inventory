@@ -1,0 +1,17 @@
+master:
+  hosts:
+    master-node:
+      ansible_user: vagrant
+      ansible_host: 192.168.56.11
+workers:
+  hosts:
+    worker-node-1:
+      ansible_user: vagrant
+      ansible_host: 192.168.56.12
+    worker-node-2:
+      ansible_user: vagrant
+      ansible_host: 192.168.56.13
+all:
+  children:
+    master:
+    workers:

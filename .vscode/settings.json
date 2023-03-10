@@ -1,0 +1,9 @@
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook": "file:///Users/perezagua/Repos/k8s-project/playbook.yaml"
+  },
+  "cSpell.words": [
+    "kubeadm",
+    "kubelet"
+  ]
+}
