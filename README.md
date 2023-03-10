@@ -1,6 +1,16 @@
-### Basic k8s cluster : Almalinux 9 + Ansible (Vagrant)
+### Very Basic k8s cluster setup: Almalinux 9 + Ansible (Vagrant env)
 
-
+#### Install VirtualBox & Vagrant 
+```
+### Ubuntu Server example:
+$ sudo apt install virtualbox virtualbox-ext-pack -y
+$ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+$ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+$ sudo apt update
+$ sudo apt install vagrant
+$ sudo reboot
+```
+#### Playground 
 ```
 ### Provisioning VMs
 $ vagrant up
@@ -62,3 +72,8 @@ kube-system   replicaset.apps/coredns-787d4945fb                  2         2   
 
 
 ```
+#### TODO
+
+- K8s HA ( multimaster )
+- use ansible roles
+- etc.
