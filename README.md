@@ -1,9 +1,9 @@
 ```
-vagrant up
-vagrant ssh node-1
+$ vagrant up
+$ vagrant ssh node-1
 
 [vagrant@node-1 ~]$ sudo dnf install git
-[vagrant@node-1 ~]$ git clone https://github.com/adavarski/almalinux-ansible-kubeadm-k8s
+[vagrant@node-1 ~]$ git clone https://github.com/adavarski/almalinux-ansible-kubeadm-k8s && cd almalinux-ansible-kubeadm-k8s
 [vagrant@node-1 almalinux-ansible-kubeadm-k8s]$ sudo dnf install epel-release
 [vagrant@node-1 almalinux-ansible-kubeadm-k8s]$ sudo dnf install ansible
 [vagrant@node-1 almalinux-ansible-kubeadm-k8s]$ ssh-keygen
