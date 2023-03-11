@@ -1,4 +1,4 @@
-### Very Basic k8s cluster setup: Almalinux 9 + Ansible (Vagrant+VBox env) + Kubeadm
+### Very Basic k8s cluster setup: Almalinux 9 + Ansible + Kubeadm (Vagrant+VBox env)
 
 #### Install VirtualBox & Vagrant 
 ```
