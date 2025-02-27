@@ -4,9 +4,9 @@
   vars_files:
   - variables
   tasks:
-  - name: Set Host name {{ inventory_hostname }}
+  - name: Set Host name "{{ inventory_hostname }}"
     ansible.builtin.hostname:
-      name: {{ inventory_hostname }}
+      name: "{{ inventory_hostname }}"
 
   - name: Install the dependencies
     ansible.builtin.yum:
