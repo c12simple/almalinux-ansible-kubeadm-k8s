@@ -11,6 +11,20 @@
     loop:
       "{{ dependencies }}"
 
+  - name: Configure firewalld kube admin
+    ansible.builtin.shell: |
+      firewall-cmd --permanent --add-port={6443,2379,2380,10250,10251,10252,10257,10259,179,4789}/tcp
+      firewall-cmd --permanent --add-port=4789/udp
+      firewall-cmd --reload
+    when: inventory_hostname in groups['master']
+
+  - name: Configure firewalld kube nodes
+    ansible.builtin.shell: |
+      firewall-cmd --permanent --add-port={179,2379,4789,10250,30000-32767}/tcp
+      firewall-cmd --permanent --add-port=4789/udp
+      firewall-cmd --reload
+    when: inventory_hostname in groups['master']
+
   - name: Turn off swap
     ansible.builtin.command: swapoff -a
 
