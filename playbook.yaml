@@ -27,6 +27,10 @@
 
   - name: Turn off swap
     ansible.builtin.command: swapoff -a
+  
+  - name: Turn off swap in fstab
+    ansible.builtin.shell: |
+      sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
   - name: Build hosts file
     lineinfile:
@@ -43,7 +47,7 @@
 
   - name: Add configuration to make them loadable at boot time
     blockinfile:
-      path: /etc/modules-load.d/containerd.conf
+      path: /etc/modules-load.d/crio.conf
       create: true
       block: |
         overlay
@@ -60,31 +64,32 @@
     loop:
       "{{ sysctl_set }}"
 
-  - name: Add official Docker Repository to CentOS 7
-    get_url:
-      url: https://download.docker.com/linux/centos/docker-ce.repo
-      dest: /etc/yum.repos.d/docker-ce.repo
-      mode: 0644
+  - name: Add official crio 
+    blockinfile:
+      path: /etc/yum.repos.d/crio.repo
+      create: true
+      unsafe_writes: true
+      block: |  
+        [cri-o]
+        name=CRI-O
+        baseurl=https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/rpm/
+        enabled=1
+        gpgcheck=1
+        gpgkey=https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/rpm/repodata/repomd.xml.key
 
-  - name: Install the containerd package
+  # - name: Install the container-selinux package
+  #   ansible.builtin.yum:
+  #     name: container-selinux
+  #     state: present
+
+  - name: Install the cri-o package
     ansible.builtin.yum:
-      name: containerd
+      name: cri-o
       state: present
 
-  - name: Create a configuration file for containerd and set it to default
-    ansible.builtin.shell: |
-      mkdir -p /etc/containerd
-      containerd config default | tee /etc/containerd/config.toml
-
-  - name: Set cgroupdriver to systemd
-    lineinfile:
-      path: /etc/containerd/config.toml
-      regexp: 'SystemdCgroup = false'
-      line: SystemdCgroup = true
-
-  - name: Restart containerd package
+  - name: Restart crio service
     ansible.builtin.service:
-      name: containerd
+      name: crio
       state: restarted
       enabled: true
 
@@ -92,13 +97,15 @@
     blockinfile:
       path: /etc/yum.repos.d/kubernetes.repo
       create: true
+      unsafe_writes: true
       block: |
         [kubernetes]
         name=Kubernetes
-        baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+        baseurl=https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/
         enabled=1
         gpgcheck=1
-        gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+        gpgkey=https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/repodata/repomd.xml.key
+        #exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
         #exclude=kubelet kubeadm kubectl
 
   - name: Install all Kubernetes modules (kubelet, kubeadm, kubectl)
@@ -118,10 +125,7 @@
 
   - name: Initializing Kubernetes cluster
     ansible.builtin.command: |
-      kubeadm init
-      --apiserver-advertise-address=192.168.56.11
-      --control-plane-endpoint=192.168.56.11
-      --pod-network-cidr=10.244.0.0/16
+      kubeadm init --apiserver-advertise-address=192.168.61.10 --control-plane-endpoint=192.168.61.10:6443  --pod-network-cidr=10.222.0.0/16
     when: inventory_hostname in groups['master']
 
   - name: Set up Kubernetes for not root user
@@ -137,11 +141,11 @@
       sudo chown $(id -u):$(id -g) $HOME/.kube/config
     when: inventory_hostname in groups['master']
 
-  - name: Install Calico Add-on
-    become: false
-    ansible.builtin.command: >
-      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
-    when: inventory_hostname in groups['master']
+  # - name: Install Calico Add-on
+  #   become: false
+  #   ansible.builtin.command: >
+  #     kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
+  #   when: inventory_hostname in groups['master']
 
   - name: Retrieve Kubernetes join command that is used to join worker node(s)
     become: false
