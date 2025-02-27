@@ -22,3 +22,7 @@ dependencies:
   - yum-utils
   - device-mapper-persistent-data 
   - lvm2
+  - tar
+
+crio_version: v1.31
+kubernetes_version: v1.31
