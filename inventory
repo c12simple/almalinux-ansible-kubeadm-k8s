@@ -1,16 +1,16 @@
 master:
   hosts:
     master-node:
-      ansible_user: vagrant
-      ansible_host: 192.168.56.11
+      ansible_user: pydio
+      ansible_host: 192.168.61.10
 workers:
   hosts:
     worker-node-1:
-      ansible_user: vagrant
-      ansible_host: 192.168.56.12
+      ansible_user: pydio
+      ansible_host: 192.168.61.11
     worker-node-2:
-      ansible_user: vagrant
-      ansible_host: 192.168.56.13
+      ansible_user: pydio
+      ansible_host: 192.168.61.12
 all:
   children:
     master:

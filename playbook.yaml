@@ -81,11 +81,11 @@
       block: |
         [kubernetes]
         name=Kubernetes
-        baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
         enabled=1
         gpgcheck=1
-        repo_gpgcheck=1
-        gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+        #exclude=kubelet kubeadm kubectl
 
   - name: Install all Kubernetes modules (kubelet, kubeadm, kubectl)
     ansible.builtin.yum:
@@ -111,6 +111,11 @@
     when: inventory_hostname in groups['master']
 
   - name: Set up Kubernetes for not root user
+    become: true
+    ansible.builtin.shell: |
+      echo "pydio ALL=(ALL:ALL) NOPASSWD: ALL" |  tee /etc/sudoers.d/pydio
+
+  - name: Set up Kubernetes for not root user
     become: false
     ansible.builtin.shell: |
       mkdir -p $HOME/.kube
@@ -121,7 +126,7 @@
   - name: Install Calico Add-on
     become: false
     ansible.builtin.command: >
-      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
+      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
     when: inventory_hostname in groups['master']
 
   - name: Retrieve Kubernetes join command that is used to join worker node(s)
