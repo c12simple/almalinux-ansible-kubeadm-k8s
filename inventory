@@ -1,14 +1,14 @@
 master:
   hosts:
-    master-node:
+    controller.test.lab:
       ansible_user: pydio
       ansible_host: 192.168.61.10
 workers:
   hosts:
-    worker-node-1:
+    worker01.test.lab:
       ansible_user: pydio
       ansible_host: 192.168.61.11
-    worker-node-2:
+    worker02.test.lab:
       ansible_user: pydio
       ansible_host: 192.168.61.12
 all:
