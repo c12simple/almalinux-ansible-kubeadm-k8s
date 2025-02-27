@@ -4,7 +4,7 @@
   vars_files:
   - variables
   tasks:
-  - name: Set Host name "{{ inventory_hostname }}"
+  - name: Set Host name
     ansible.builtin.hostname:
       name: "{{ inventory_hostname }}"
 
