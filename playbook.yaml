@@ -142,7 +142,7 @@
   - name: Initializing Kubernetes cluster
     ansible.builtin.command: |
       kubeadm init --apiserver-advertise-address=192.168.61.10 --control-plane-endpoint=controller.test.lab:6443  --pod-network-cidr=10.222.0.0/16
-    when: inventory_hostname in groups['master']
+    when: inventory_hostname in groups['master'] and 'running' not in cluster_status.stdout
 
   - name: Set up Kubernetes for not root user
     become: true
@@ -180,7 +180,7 @@
     when: inventory_hostname in groups['master']
 
   - name: Join node to the cluster
-    ansible.builtin.command: "{{ hostvars['master-node'].join_command }}"
+    ansible.builtin.command: "{{ hostvars['controller.test.lab'].join_command }}"
     when: inventory_hostname in groups['workers']
 
   - name: Add k alias on Master Node
