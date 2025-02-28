@@ -150,7 +150,7 @@
       state: restarted
 
   - name: Check if Kubernetes cluster is initialized
-    shell: "kubectl --kubeconfig=$HOME/.kube/config cluster-info"
+    shell: "kubectl --kubeconfig=/etc/kubernetes/admin.conf cluster-info"
     register: cluster_status
     ignore_errors: yes
     when: inventory_hostname in groups['master']    
