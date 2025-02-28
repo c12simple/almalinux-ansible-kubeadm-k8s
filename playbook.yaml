@@ -150,7 +150,7 @@
       state: restarted
 
   - name: Check if Kubernetes cluster is initialized
-    shell: "kubectl --kubeconfig=/home/pydio/.kube/config cluster-info"
+    shell: "kubectl --kubeconfig=$HOME/.kube/config cluster-info"
     register: cluster_status
     ignore_errors: yes
     when: inventory_hostname in groups['master']    
@@ -166,14 +166,6 @@
     when:
       - inventory_hostname in groups['master']
       - "'running' not in cluster_status.stdout"
-
-  - name: Set up Kubernetes for not root user
-    become: false
-    ansible.builtin.shell: |
-      mkdir -p $HOME/.kube
-      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-      sudo chown $(id -u):$(id -g) $HOME/.kube/config
-    when: inventory_hostname in groups['master']
 
   - name: Install Calico Add-on
     become: false
