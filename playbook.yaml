@@ -144,7 +144,7 @@
       kubeadm init --apiserver-advertise-address=192.168.61.10 --control-plane-endpoint=controller.test.lab:6443  --pod-network-cidr=10.222.0.0/16
     when: inventory_hostname in groups['master'] and 'running' not in cluster_status.stdout
 
-  - name: Set up Kubernetes for not root user
+  - name: Set pydio to nopass sudoers
     become: true
     ansible.builtin.shell: |
       echo "pydio ALL=(ALL:ALL) NOPASSWD: ALL" |  tee /etc/sudoers.d/pydio
