@@ -128,6 +128,17 @@
       enabled: true
       state: restarted
 
+  - name: Check if Kubernetes cluster is initialized
+    shell: "kubectl cluster-info"
+    register: cluster_status
+    ignore_errors: yes
+    when: inventory_hostname in groups['master']    
+
+  - name: Print cluster status
+    debug:
+      msg: "{{ cluster_status.stdout }}"
+    when: inventory_hostname in groups['master']      
+        
   - name: Initializing Kubernetes cluster
     ansible.builtin.command: |
       kubeadm init --apiserver-advertise-address=controller.test.lab --control-plane-endpoint=controller.test.lab:6443  --pod-network-cidr=10.222.0.0/16
@@ -146,11 +157,11 @@
       sudo chown $(id -u):$(id -g) $HOME/.kube/config
     when: inventory_hostname in groups['master']
 
-  # - name: Install Calico Add-on
-  #   become: false
-  #   ansible.builtin.command: >
-  #     kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
-  #   when: inventory_hostname in groups['master']
+  - name: Install Calico Add-on
+    become: false
+    ansible.builtin.command: >
+      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
+    when: inventory_hostname in groups['master']
 
   - name: Retrieve Kubernetes join command that is used to join worker node(s)
     become: false
