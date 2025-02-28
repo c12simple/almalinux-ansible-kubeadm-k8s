@@ -8,6 +8,27 @@
     ansible.builtin.hostname:
       name: "{{ inventory_hostname }}"
 
+  - name: Make sure we have a 'wheel' group
+    group:
+      name: wheel
+      state: present
+  
+  - name: Allow 'wheel' group to have passwordless sudo
+    lineinfile:
+      dest: /etc/sudoers
+      state: present
+      regexp: '^%wheel'
+      line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
+  
+  - name: Add sudoers users to wheel group
+    user:
+      name=pydio
+      groups=wheel
+      append=yes
+      state=present
+      createhome=yes
+    
   - name: Install the dependencies
     ansible.builtin.yum:
       name: "{{ item }}"
@@ -143,11 +164,6 @@
     ansible.builtin.command: |
       kubeadm init --apiserver-advertise-address=192.168.61.10 --control-plane-endpoint=controller.test.lab:6443  --pod-network-cidr=10.222.0.0/16
     when: inventory_hostname in groups['master'] and 'running' not in cluster_status.stdout
-
-  - name: Set pydio to nopass sudoers
-    become: true
-    ansible.builtin.shell: |
-      echo "pydio ALL=(ALL:ALL) NOPASSWD: ALL" |  tee /etc/sudoers.d/pydio
 
   - name: Set up Kubernetes for not root user
     become: false
