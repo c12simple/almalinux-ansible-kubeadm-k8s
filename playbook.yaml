@@ -129,7 +129,7 @@
       state: restarted
 
   - name: Check if Kubernetes cluster is initialized
-    shell: "kubectl cluster-info"
+    shell: "kubectl --kubeconfig=/home/pydio/.kube/config cluster-info"
     register: cluster_status
     ignore_errors: yes
     when: inventory_hostname in groups['master']    
